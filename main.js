@@ -220,7 +220,7 @@ const states = {
                 }
                 break;
             default:
-                msg.reply("Please choose an option A, B, C, or D.")
+                msg.reply("Please choose an option A, B, C, or D.");
             }
         }
     },
@@ -270,7 +270,7 @@ const states = {
                 }
                 break;
             default:
-                msg.reply("Please choose an option A, B, C, or D.")
+                msg.reply("Please choose an option A, B, C, or D.");
             }
         }
     },
