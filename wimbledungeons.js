@@ -16,10 +16,10 @@ function option_to_value(option) {
 
 function score_description(score) {
     switch (score) {
-        case 0: return "love";
-        case 1: return "15";
-        case 2: return "30";
-        case 3: return "40";
+    case 0: return "love";
+    case 1: return "15";
+    case 2: return "30";
+    case 3: return "40";
     }
 }
 
@@ -55,13 +55,13 @@ class Game {
 
     ask_player_one_to_serve() {
         this.server = this.player_one;
-        this.channel.send(create_embed(`It's ${this.player_one.username} turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`));
+        this.channel.send(create_embed(`It's ${this.player_one.username}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`));
         this.state = this.player_one_serve;
     }
 
     ask_player_two_to_serve() {
         this.server = this.player_two;
-        this.channel.send(create_embed(`It's ${this.player_two.username} turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`));
+        this.channel.send(create_embed(`It's ${this.player_two.username}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`));
         this.state = this.player_two_serve;
     }
 
