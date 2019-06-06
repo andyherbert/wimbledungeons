@@ -1,40 +1,25 @@
 const discord = require("discord.js");
 const client = new discord.Client();
-const wimbledungeon = require("./wimbledungeons.js");
+const {WimbleDungeonsGame} = require("./wimbledungeons.js");
 require("dotenv").config();
 
-let channel, player_one, game, timer;
+let game = new WimbleDungeonsGame(client);
+
+function cmd(msg, text) {
+    return msg.cleanContent == `@${client.user.username} ${text}`;
+}
 
 client.on("message", (msg) => {
-    if (game && !game.over) {
-        if ((msg.author == game.player_one || msg.author == game.player_two) && msg.cleanContent == `@${client.user.username} end`) {
-            msg.reply("Okay, game is over 😥");
-            game.over = true;
-        } else {
-            game.state(msg);
-        }
-        if (game.over) client.user.setPresence({game: {name: ""}});
-    } else {
-        if (msg.cleanContent == `@${client.user.username} start`) {
-            if (player_one == undefined) {
-                player_one = msg.author;
-                channel = msg.channel;
-                timer = client.setTimeout(() => {
-                    player_one = undefined;
-                    msg.reply("No-one wanted to join your game, maybe try again later 🤷");
-                }, 30 * 1000);
-                msg.reply("You have started a new game 🎾! Another player has 30 seconds to join! ⏲️");
-            } else {
-                if (msg.channel == channel) {
-                    clearTimeout(timer);
-                    game = new wimbledungeon.Game(player_one, msg.author, channel);
-                    channel = undefined;
-                    player_one = undefined;
-                    client.user.setPresence({game: {name: "WimbleDungeons"}});
-                }
-            }
-        }
+    if (cmd(msg, "rules")) {
+        game.rules(msg.channel);
+    } else if (cmd(msg, "start")) {
+        if (!game.started) game.add_player(msg.author, msg.channel);
+    } else if (cmd(msg, "end")) {
+        game.quit(msg.author, msg.channel);
+    } else if (game.started) {
+        game.state(msg);
     }
+    if (game.over) game = new WimbleDungeonsGame(client);
 });
 
 client.login(process.env.CLIENT_TOKEN);
