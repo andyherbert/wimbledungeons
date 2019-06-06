@@ -1,5 +1,10 @@
 const {d20, Game} = require("./game.js");
 
+const GAME_NAME = "WimbleDungeons";
+const GAME_URL = "https://github.com/andyherbert/wimbledungeons";
+const EMBED_COLOR = "#f6ec00";
+const GAME_RULES = "./README.md";
+
 function option_to_value(option) {
     switch (option) {
     case "a": return 3;
@@ -22,33 +27,33 @@ function score_description(score) {
 class WimbleDungeonsGame extends Game {
     show_score() {
         if (this.player_one_score == 3 && this.player_two_score == 3) {
-            super.embed("Deuce!");
+            super.small_embed("Deuce!");
         } else if (this.player_one_score == 4 && this.player_two_score == 3) {
-            super.embed(`Advantage ${this.player_one_name}!`);
+            super.user_embed(`Advantage ${super.player_one_name}!`, super.player_one);
         } else if (this.player_two_score == 4 && this.player_one_score == 3) {
-            super.embed(`Advantage ${this.player_two_name}!`);
+            super.user_embed(`Advantage ${super.player_two_name}!`, super.player_two);
         } else if (this.player_one_score == 2 && this.player_two_score == 2) {
-            super.embed("30-all!");
+            super.small_embed("30-all!");
         } else if (this.player_one_score == 1 && this.player_two_score == 1) {
-            super.embed("15-all!");
+            super.small_embed("15-all!");
         } else {
             if (super.is_player_one(this.server)) {
-                super.embed(`${score_description(this.player_one_score)}-${score_description(this.player_two_score)}`);
+                super.user_embed(`${score_description(this.player_one_score)}-${score_description(this.player_two_score)}`, (this.player_one_score > this.player_two_score) ? super.player_one : super.player_two);
             } else if (super.is_player_two(this.server)) {
-                super.embed(`${score_description(this.player_two_score)}-${score_description(this.player_one_score)}`);
+                super.user_embed(`${score_description(this.player_two_score)}-${score_description(this.player_one_score)}`, (this.player_one_score > this.player_two_score) ? super.player_one : super.player_two);
             }
         }
     }
 
     ask_player_one_to_serve() {
         this.server = super.player_one;
-        super.embed(`It's ${super.player_one_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`);
+        super.user_embed(`It's ${super.player_one_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`, super.player_one);
         this.state = this.player_one_serve;
     }
 
     ask_player_two_to_serve() {
         this.server = super.player_two;
-        super.embed(`It's ${super.player_two_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`);
+        super.user_embed(`It's ${super.player_two_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`, super.player_two);
         this.state = this.player_two_serve;
     }
 
@@ -91,16 +96,14 @@ class WimbleDungeonsGame extends Game {
     }
 
     ask_player_one_to_rally() {
-        super.embed(`Now ${this.player_one_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.`);
-        if (this.player_one_power_points) super.embed("Remember that you can use a power to reduce the threshold of the return (R) or press the advantage on the opponent (P)", `Number of powerpoints left: ${this.player_one_power_points}`);
+        super.user_embed(`Now ${super.player_one_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.\n\nYou can also use a powerpoint to reduce the threshold of the return (R) or press the advantage on the opponent (P)`, super.player_one, `Number of powerpoints left: ${this.player_one_power_points}`);
         this.state = this.player_one_rally;
         this.reduce_the_threshold = false;
         this.press_the_advantage = false;
     }
 
     ask_player_two_to_rally() {
-        super.embed(`Now ${super.player_two_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.`);
-        if (this.player_two_power_points) super.embed("Remember that you can use a power to reduce the threshold of the return (R) or press the advantage on the opponent (P)", `Number of powerpoints left: ${this.player_two_power_points}`);
+        super.user_embed(`Now ${super.player_two_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.\n\nYou can also use a powerpoint to reduce the threshold of the return (R) or press the advantage on the opponent (P)`, super.player_two, `Number of powerpoints left: ${this.player_two_power_points}`);
         this.state = this.player_two_rally;
         this.reduce_the_threshold = false;
         this.press_the_advantage = false;
@@ -149,7 +152,7 @@ class WimbleDungeonsGame extends Game {
                         if (this.press_the_advantage) this.rally_value = Math.min(20, this.rally_value + 5);
                         this.ask_player_two_to_rally();
                     } else {
-                        msg.reply(`Unfortunately you needed ${this.rally_value + option} and rolled a ${roll}.`);
+                        msg.reply(`Unfortunately you needed ${threshold} and rolled a ${roll}.`);
                         this.give_point_to_player_two();
                     }
                 } else {
@@ -202,7 +205,7 @@ class WimbleDungeonsGame extends Game {
                         if (this.press_the_advantage) this.rally_value = Math.min(20, this.rally_value + 5);
                         this.ask_player_one_to_rally();
                     } else {
-                        msg.reply(`Unfortunately you needed ${this.rally_value + option} and rolled a ${roll}.`);
+                        msg.reply(`Unfortunately you needed ${threshold} and rolled a ${roll}.`);
                         this.give_point_to_player_one();
                     }
                 } else {
@@ -219,7 +222,7 @@ class WimbleDungeonsGame extends Game {
             this.player_two_score = 3;
         }
         if (this.player_one_score >= 4 && (this.player_one_score - this.player_two_score >= 2)) {
-            super.embed(`${this.player_one_name} has won the game! Well Done!`);
+            super.user_embed(`${super.player_one_name} has won the game! Well Done!`, super.player_one);
             super.end();
         } else {
             this.show_score();
@@ -234,7 +237,7 @@ class WimbleDungeonsGame extends Game {
             this.player_two_score = 3;
         }
         if (this.player_two_score >= 4 && (this.player_two_score - this.player_one_score >= 2)) {
-            super.embed(`${this.player_two_name} has won the game! Well Done!`);
+            super.user_embed(`${this.player_two_name} has won the game! Well Done!`, super.player_two);
             super.end();
         } else {
             this.show_score();
@@ -261,12 +264,12 @@ class WimbleDungeonsGame extends Game {
     }
 
     start() {
-        super.start("WimbleDungeons", "https://github.com/andyherbert/wimbledungeons", "#f6ec00", "Let's start 🎾Wimbledungeons🎾, the D&D Tennis Game for Discord!");
+        super.start(GAME_NAME, GAME_URL, EMBED_COLOR, "Let's start Wimbledungeons: The D&D Tennis Game for Discord!");
         this.ask_player_one_to_serve();
     }
 
     rules(channel) {
-        super.rules("WimbleDungeons", "https://github.com/andyherbert/wimbledungeons", "#f6ec00", channel, "./README.md");
+        super.rules(GAME_NAME, GAME_URL, EMBED_COLOR, channel, GAME_RULES);
     }
 }
 

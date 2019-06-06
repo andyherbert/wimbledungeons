@@ -11,7 +11,7 @@ function d20() {
 
 function end_timeout(game) {
     return () => {
-        game.channel.send("No-one wanted to join your game, maybe try again later 🤷");
+        game.user_embed(`Sorry ${game.player_one_name}, it looks like no-one wanted to join your game 🤷‍`, game.player_one);
         game.over = true;
     };
 }
@@ -73,7 +73,7 @@ class Game {
 
     start_timer(seconds) {
         this.timer = this.client.setTimeout(end_timeout(this), seconds * 1000);
-        this.channel.send(`You have started a new game 🎾! Another player has ${seconds} seconds to join! ⏲️`);
+        this.user_embed(`${this.player_one_name} has created a new game! Another player has ${seconds} seconds to join! ⏱`, this.player_one);
     }
 
     add_player(player, channel) {
@@ -104,24 +104,31 @@ class Game {
         if (this.is_a_player(user) && this.in_channel(channel)) {
             if (!this.started) clearTimeout(this.timer);
             this.end();
-            this.channel.send(`${user.username} ended the game.`);
+            this.user_embed(`${user.username} ended the game.`, user);
         }
     }
 
-    embed(text, footer = "") {
-        const embed =  new discord.RichEmbed()
+    embed(text) {
+        const embed = new discord.RichEmbed()
             .setTitle(this.game_name)
             .setURL(this.game_url)
             .setColor(this.embed_color)
             .setDescription(text)
-            .setThumbnail(this.client.user.avatarURL)
-            .setFooter(footer);
+            .setThumbnail(this.client.user.avatarURL);
         this.channel.send(embed);
+    }
+
+    small_embed(text) {
+        this.channel.send(new discord.RichEmbed().setDescription(text));
+    }
+
+    user_embed(text, user, footer = "") {
+        this.channel.send(new discord.RichEmbed().setDescription(text).setThumbnail(user.avatarURL).setFooter(footer));
     }
 
     rules(game_name, game_url, embed_color, channel, file) {
         fs.readFile(file, "utf-8", (err, text) => {
-            channel.send(new discord.RichEmbed().setTitle(game_name).setURL(game_url).setColor(embed_color).setDescription(text).setThumbnail(this.client.user.avatarURL));
+            if (!err) channel.send(new discord.RichEmbed().setTitle(game_name).setURL(game_url).setColor(embed_color).setDescription(text).setThumbnail(this.client.user.avatarURL));
         });
     }
 }

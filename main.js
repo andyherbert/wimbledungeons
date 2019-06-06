@@ -2,14 +2,15 @@ const discord = require("discord.js");
 const client = new discord.Client();
 const {WimbleDungeonsGame} = require("./wimbledungeons.js");
 require("dotenv").config();
-
-let game = new WimbleDungeonsGame(client);
+const games = {};
 
 function cmd(msg, text) {
     return msg.cleanContent == `@${client.user.username} ${text}`;
 }
 
 client.on("message", (msg) => {
+    if (games[msg.channel.id] == undefined) games[msg.channel.id] = new WimbleDungeonsGame(client);
+    const game = games[msg.channel.id];
     if (cmd(msg, "rules")) {
         game.rules(msg.channel);
     } else if (cmd(msg, "start")) {
@@ -19,7 +20,7 @@ client.on("message", (msg) => {
     } else if (game.started) {
         game.state(msg);
     }
-    if (game.over) game = new WimbleDungeonsGame(client);
+    if (game.over) games[msg.channel.id] = new WimbleDungeonsGame(client);
 });
 
 client.login(process.env.CLIENT_TOKEN);
