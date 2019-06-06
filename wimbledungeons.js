@@ -4,6 +4,7 @@ const GAME_NAME = "WimbleDungeons";
 const GAME_URL = "https://github.com/andyherbert/wimbledungeons";
 const EMBED_COLOR = "#f6ec00";
 const GAME_RULES = "./README.md";
+const GAME_HELP = "./help.md";
 
 function option_to_value(option) {
     switch (option) {
@@ -11,7 +12,7 @@ function option_to_value(option) {
     case "b": return 5;
     case "c": return 8;
     case "d": return 10;
-    default: return undefined;
+    default: return 0;
     }
 }
 
@@ -47,109 +48,173 @@ class WimbleDungeonsGame extends Game {
 
     ask_player_one_to_serve() {
         this.server = super.player_one;
-        super.user_embed(`It's ${super.player_one_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`, super.player_one);
+        super.user_embed(`It's ${super.player_one_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.\n\nYou can also use a PowerPoint to reduce the threshold of your shot (R) or add to the power of your shot (P)`, super.player_one,`Total PowerPoints: ${this.player_one_power_points}`);
         this.state = this.player_one_serve;
+        this.reduce_the_threshold = false;
+        this.press_the_advantage = false;
     }
 
     ask_player_two_to_serve() {
         this.server = super.player_two;
-        super.user_embed(`It's ${super.player_two_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.`, super.player_two);
+        super.user_embed(`It's ${super.player_two_name}'s turn to serve, choose a skill threshold between 5 and 10 to determine the riskiness of the shot.\n\nYou can also use a PowerPoint to reduce the threshold of your shot (R) or add to the power of your shot (P)`, super.player_two, `Total PowerPoints: ${this.player_two_power_points}`);
         this.state = this.player_two_serve;
+        this.reduce_the_threshold = false;
+        this.press_the_advantage = false;
+    }
+
+    award_power_point_to_player_one() {
+        this.player_one_power_points += 1;
+        super.user_embed(`${super.player_one_name} has gained a power point!`, super.player_one, `Total PowerPoints: ${this.player_one_power_points}`);
+    }
+
+    award_power_point_to_player_two() {
+        this.player_two_power_points += 1;
+        super.user_embed(`${super.player_two_name} has gained a power point!`, super.player_two, `Total PowerPoints: ${this.player_two_power_points}`);
     }
 
     player_one_serve(msg) {
-        if (super.is_player_one(msg.author) && super.in_channel(msg.channel)) {
-            const serve_value = parseInt(msg.cleanContent, 10);
-            if (serve_value >= 5 && serve_value <= 10) {
-                const roll = d20();
-                if (roll >= serve_value) {
-                    msg.reply(`Congratulations, you rolled a ${roll} 🎲!`);
-                    this.rally_value = serve_value;
-                    this.ask_player_two_to_rally();
-                } else {
-                    msg.reply(`Unfortunately, you rolled a ${roll} and a point is awarded to the opposing player`);
-                    this.give_point_to_player_two();
-                }
+        if (super.is_player_one(msg.author)) {
+            const response = msg.cleanContent.toLowerCase();
+            if (response == "r") {
+                this.player_one_reduce_the_threshold(msg);
+            } else if (response == "p") {
+                this.player_one_press_the_advantage(msg);
             } else {
-                msg.reply("You must choose a value between 5 and 10");
+                const serve_value = parseInt(response, 10);
+                if (serve_value >= 5 && serve_value <= 10) {
+                    const threshold = this.reduce_the_threshold ? Math.max(1, serve_value - 5) : serve_value;
+                    const roll = d20();
+                    if (roll > 15 && this.player_one_power_points < 2) this.award_power_point_to_player_one();
+                    if (roll >= threshold) {
+                        msg.reply(`Congratulations, you needed ${threshold}, and you rolled a ${roll} 🎲!`);
+                        this.rally_value = this.press_the_advantage ? serve_value + 5 : serve_value;
+                        this.ask_player_two_to_rally();
+                    } else {
+                        msg.reply(`Unfortunately, you needed ${threshold}, you rolled a ${roll} and a point is awarded to the opposing player`);
+                        this.give_point_to_player_two();
+                    }
+                } else {
+                    msg.reply("You must choose a value between 5 and 10");
+                }
             }
         }
     }
 
     player_two_serve(msg) {
-        if (super.is_player_two(msg.author) && super.in_channel(msg.channel)) {
-            const serve_value = parseInt(msg.cleanContent, 10);
-            if (serve_value >= 5 && serve_value <= 10) {
-                const roll = d20();
-                if (roll >= serve_value) {
-                    msg.reply(`Congratulations, you rolled a ${roll}!`);
-                    this.rally_value = serve_value;
-                    this.ask_player_one_to_rally();
-                } else {
-                    msg.reply(`Unfortunately, you rolled a ${roll} and a point is awarded to the opposing player`);
-                    this.give_point_to_player_one();
-                }
+        if (super.is_player_two(msg.author)) {
+            const response = msg.cleanContent.toLowerCase();
+            if (response == "r") {
+                this.player_two_reduce_the_threshold(msg);
+            } else if (response == "p") {
+                this.player_two_press_the_advantage(msg);
             } else {
-                msg.reply("You must choose a value between 5 and 10");
+                const serve_value = parseInt(response, 10);
+                if (serve_value >= 5 && serve_value <= 10) {
+                    const threshold = this.reduce_the_threshold ? Math.max(1, serve_value - 5) : serve_value;
+                    const roll = d20();
+                    if (roll > 15 && this.player_two_power_points < 2) this.award_power_point_to_player_two();
+                    if (roll >= threshold) {
+                        msg.reply(`Congratulations, you needed ${threshold}, and you rolled a ${roll}!`);
+                        this.rally_value = this.press_the_advantage ? serve_value + 5 : serve_value;
+                        this.ask_player_one_to_rally();
+                    } else {
+                        msg.reply(`Unfortunately, you needed ${threshold}, you rolled a ${roll}, and a point is awarded to the opposing player`);
+                        this.give_point_to_player_one();
+                    }
+                } else {
+                    msg.reply("You must choose a value between 5 and 10");
+                }
             }
         }
     }
 
     ask_player_one_to_rally() {
-        super.user_embed(`Now ${super.player_one_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.\n\nYou can also use a powerpoint to reduce the threshold of the return (R) or press the advantage on the opponent (P)`, super.player_one, `Number of powerpoints left: ${this.player_one_power_points}`);
+        super.user_embed(`Now ${super.player_one_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.\n\nYou can also use a PowerPoint to reduce the threshold of your shot (R) or add to the power of your shot (P)`, super.player_one, `Total PowerPoints: ${this.player_one_power_points}`);
         this.state = this.player_one_rally;
         this.reduce_the_threshold = false;
         this.press_the_advantage = false;
     }
 
     ask_player_two_to_rally() {
-        super.user_embed(`Now ${super.player_two_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.\n\nYou can also use a powerpoint to reduce the threshold of the return (R) or press the advantage on the opponent (P)`, super.player_two, `Number of powerpoints left: ${this.player_two_power_points}`);
+        super.user_embed(`Now ${super.player_two_name} must roll ${this.rally_value} or higher to return the shot plus an additional value for their shot. Choose from straight (A), top-spin (B), slice (C), and dropshot (D), the values for these shots are 3, 5, 8, 10 respectively.\n\nYou can also use a PowerPoint to reduce the threshold of your shot (R) or add to the power of your shot (P)`, super.player_two, `Total PowerPoints: ${this.player_two_power_points}`);
         this.state = this.player_two_rally;
         this.reduce_the_threshold = false;
         this.press_the_advantage = false;
     }
 
+    player_one_reduce_the_threshold(msg) {
+        if (this.reduce_the_threshold || this.press_the_advantage) {
+            msg.reply("You have already used a PowerPoint on this turn!");
+        } else {
+            if (this.player_one_power_points) {
+                this.player_one_power_points -= 1;
+                msg.reply("You have used one of your PowerPoints to reduce the threshold of your shot by 5.");
+                this.reduce_the_threshold = true;
+            } else {
+                msg.reply("You don't have any PowerPoints to use!");
+            }
+        }
+    }
+
+    player_one_press_the_advantage(msg) {
+        if (this.reduce_the_threshold || this.press_the_advantage) {
+            msg.reply("You have already used a PowerPoint on this turn!");
+        } else {
+            if (this.player_one_power_points) {
+                this.player_one_power_points -= 1;
+                msg.reply("You have used one of your PowerPoints to add 5 to the power of your shot!");
+                this.press_the_advantage = true;
+            } else {
+                msg.reply("You don't have any PowerPoints to use!");
+            }
+        }
+    }
+
+    player_two_reduce_the_threshold(msg) {
+        if (this.reduce_the_threshold || this.press_the_advantage) {
+            msg.reply("You have already used a PowerPoint on this turn!");
+        } else {
+            if (this.player_two_power_points) {
+                this.player_two_power_points -= 1;
+                msg.reply("You have used one of your PowerPoints to reduce the threshold of your shot by 5.");
+                this.reduce_the_threshold = true;
+            } else {
+                msg.reply("You don't have any PowerPoints to use!");
+            }
+        }
+    }
+
+    player_two_press_the_advantage(msg) {
+        if (this.reduce_the_threshold || this.press_the_advantage) {
+            msg.reply("You have already used a PowerPoint on this turn!");
+        } else {
+            if (this.player_two_power_points) {
+                this.player_two_power_points -= 1;
+                msg.reply("You have used one of your PowerPoints to add 5 to the power of your shot!");
+                this.press_the_advantage = true;
+            } else {
+                msg.reply("You don't have any PowerPoints to use!");
+            }
+        }
+    }
+
     player_one_rally(msg) {
-        if (super.is_player_one(msg.author) && super.in_channel(msg.channel)) {
+        if (super.is_player_one(msg.author)) {
             const response = msg.cleanContent.toLowerCase();
             if (response == "r") {
-                if (this.reduce_the_threshold || this.press_the_advantage) {
-                    msg.reply("You have already used a powerpoint on this turn!");
-                } else {
-                    if (this.player_one_power_points) {
-                        this.player_one_power_points -= 1;
-                        msg.reply("You have used one of your powerpoints to reduce the threshold of your return by 5, now choose the type of your return.");
-                        this.reduce_the_threshold = true;
-                    } else {
-                        msg.reply("You don't have any powerpoints to use!");
-                    }
-                }
+                this.player_one_reduce_the_threshold(msg);
             } else if (response == "p") {
-                if (this.reduce_the_threshold || this.press_the_advantage) {
-                    msg.reply("You have already used a powerpoint on this turn!");
-                } else {
-                    if (this.player_one_power_points) {
-                        this.player_one_power_points -= 1;
-                        msg.reply("You have used one of your powerpoints to increase the threshold on your opponents return by 5, now choose the type of your return.");
-                        this.press_the_advantage = true;
-                    } else {
-                        msg.reply("You don't have any powerpoints to use!");
-                    }
-                }
+                this.player_one_press_the_advantage(msg);
             } else {
                 const option = option_to_value(response);
                 if (option) {
                     const roll = d20();
-                    let threshold = this.rally_value + option;
-                    if (this.reduce_the_threshold) threshold = Math.max(0, threshold - 5);
+                    let threshold = Math.min(this.rally_value + option, 20);
+                    if (this.reduce_the_threshold) threshold = Math.max(1, threshold - 5);
                     if (roll >= threshold) {
                         msg.reply(`You needed ${threshold} and rolled a ${roll} and returned the shot`);
-                        if (roll > 15 && this.player_one_power_points < 2) {
-                            this.player_one_power_points += 1;
-                            msg.reply("You also gained a power point for rolling over 15 on a successfull rallying shot!");
-                        }
-                        this.rally_value = option;
-                        if (this.press_the_advantage) this.rally_value = Math.min(20, this.rally_value + 5);
+                        if (roll > 15 && this.player_one_power_points < 2) this.award_power_point_to_player_one();
+                        this.rally_value = this.press_the_advantage ? option + 5 : option;
                         this.ask_player_two_to_rally();
                     } else {
                         msg.reply(`Unfortunately you needed ${threshold} and rolled a ${roll}.`);
@@ -163,46 +228,22 @@ class WimbleDungeonsGame extends Game {
     }
 
     player_two_rally(msg) {
-        if (super.is_player_two(msg.author) && super.in_channel(msg.channel)) {
+        if (super.is_player_two(msg.author)) {
             const response = msg.cleanContent.toLowerCase();
             if (response == "r") {
-                if (this.reduce_the_threshold || this.press_the_advantage) {
-                    msg.reply("You have already used a powerpoint on this turn!");
-                } else {
-                    if (this.player_two_power_points) {
-                        this.player_two_power_points -= 1;
-                        msg.reply("You have used one of your powerpoints to reduce the threshold of your return by 5, now choose the type of your return.");
-                        this.reduce_the_threshold = true;
-                    } else {
-                        msg.reply("You don't have any powerpoints to use!");
-                    }
-                }
+                this.player_two_reduce_the_threshold(msg);
             } else if (response == "p") {
-                if (this.reduce_the_threshold || this.press_the_advantage) {
-                    msg.reply("You have already used a powerpoint on this turn!");
-                } else {
-                    if (this.player_two_power_points) {
-                        this.player_two_power_points -= 1;
-                        msg.reply("You have used one of your powerpoints to increase the threshold on your opponents return by 5, now choose the type of your return.");
-                        this.press_the_advantage = true;
-                    } else {
-                        msg.reply("You don't have any powerpoints to use!");
-                    }
-                }
+                this.player_two_press_the_advantage(msg);
             } else {
                 const option = option_to_value(response);
                 if (option) {
                     const roll = d20();
-                    let threshold = this.rally_value + option;
-                    if (this.reduce_the_threshold) threshold = Math.max(0, threshold - 5);
+                    let threshold = Math.min(this.rally_value + option, 20);
+                    if (this.reduce_the_threshold) threshold = Math.max(1, threshold - 5);
                     if (roll >= threshold) {
                         msg.reply(`You needed ${threshold} and rolled a ${roll} and returned the shot`);
-                        if (roll > 15 && this.player_two_power_points < 2) {
-                            this.player_two_power_points += 1;
-                            msg.reply("You also gained a power point for rolling over 15 on a successfull rallying shot!");
-                        }
-                        this.rally_value = option;
-                        if (this.press_the_advantage) this.rally_value = Math.min(20, this.rally_value + 5);
+                        if (roll > 15 && this.player_two_power_points < 2) this.award_power_point_to_player_two();
+                        this.rally_value = this.press_the_advantage ? option + 5 : option;
                         this.ask_player_one_to_rally();
                     } else {
                         msg.reply(`Unfortunately you needed ${threshold} and rolled a ${roll}.`);
@@ -245,8 +286,8 @@ class WimbleDungeonsGame extends Game {
         }
     }
 
-    constructor(client) {
-        super(client);
+    constructor(client, channel) {
+        super(client, channel);
         this.player_one_score = 0;
         this.player_one_power_points = 0;
         this.player_two_score = 0;
@@ -254,12 +295,11 @@ class WimbleDungeonsGame extends Game {
         this.rally_value = 0;
     }
 
-    add_player(player, channel) {
-        if (super.add_player(player, channel)) {
-            switch (super.number_of_players) {
-                case 1: super.start_timer(30); break;
-                case 2: this.start(); break;
-            }
+    add_player(player) {
+        super.add_player(player);
+        switch (super.number_of_players) {
+        case 1: super.start_timer(30); break;
+        case 2: this.start(); break;
         }
     }
 
@@ -268,8 +308,12 @@ class WimbleDungeonsGame extends Game {
         this.ask_player_one_to_serve();
     }
 
-    rules(channel) {
-        super.rules(GAME_NAME, GAME_URL, EMBED_COLOR, channel, GAME_RULES);
+    rules() {
+        super.show_file(GAME_NAME, GAME_URL, EMBED_COLOR, GAME_RULES);
+    }
+
+    help() {
+        super.show_file(GAME_NAME, GAME_URL, EMBED_COLOR, GAME_HELP);
     }
 }
 

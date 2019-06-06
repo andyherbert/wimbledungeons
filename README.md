@@ -1,4 +1,4 @@
-original game by Jonathan Astles, modified rules by Andy Herbert
+original game by Jonathan Astles, implementation by Andy Herbert
 
 Players select which type of shot they will play, with more difficult shots requiring a higher roll to succeed. When returning a shot, players must beat the difficulty threshold for their opponent's shot added to the shot they have selected.
 
@@ -14,4 +14,4 @@ Player 1 serves choosing a serve difficulty of 8. They roll a 16 and therefore s
 
 Etc.
 
-Any roll made after a serve above 15 gives the player a point of power. Power can be spent before rolling to return the shot to either reduce the threshold of your return by 5 (Calm in the Storm) or increase the threshold of opponents return by 5 (Press the Advantage). Reducing the threshold can be used even if the threshold has been raised by the use of power. Increasing the threshold is capped at 20. i.e. a natural 20 will still always return a shot. Power is gained only if the player successfully returns a shot during a rally, and not on a serve. A maximum of two power points can be held in reserve during play.
+Any roll above 15, even if they miss the shot, gives the player a point of power. Power can be spent before rolling to return the shot to either reduce the threshold of your return by 5 (Calm in the Storm) or increase the threshold of opponents return by 5 (Press the Advantage). Reducing the threshold can be used even if the threshold has been raised by the use of power. Increasing the threshold is capped at 20. i.e. a natural 20 will still always return a shot. A maximum of two power points can be held in reserve during play.

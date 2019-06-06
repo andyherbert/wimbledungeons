@@ -60,12 +60,9 @@ class Game {
         return this.players.length;
     }
 
-    in_channel(channel) {
-        return channel.id == this.channel.id;
-    }
-
-    constructor(client) {
+    constructor(client, channel) {
         this.client = client;
+        this.channel = channel;
         this.players = [];
         this.started = false;
         this.over = false;
@@ -76,13 +73,8 @@ class Game {
         this.user_embed(`${this.player_one_name} has created a new game! Another player has ${seconds} seconds to join! ⏱`, this.player_one);
     }
 
-    add_player(player, channel) {
-        if (this.players.length == 0) this.channel = channel;
-        if (this.in_channel(channel)) {
-            this.players[this.players.length] = player;
-            return true;
-        }
-        return false;
+    add_player(player) {
+        this.players[this.players.length] = player;
     }
 
     start(game_name, game_url, embed_color, text) {
@@ -100,8 +92,8 @@ class Game {
         this.over = true;
     }
 
-    quit(user, channel) {
-        if (this.is_a_player(user) && this.in_channel(channel)) {
+    quit(user) {
+        if (this.is_a_player(user)) {
             if (!this.started) clearTimeout(this.timer);
             this.end();
             this.user_embed(`${user.username} ended the game.`, user);
@@ -126,9 +118,9 @@ class Game {
         this.channel.send(new discord.RichEmbed().setDescription(text).setThumbnail(user.avatarURL).setFooter(footer));
     }
 
-    rules(game_name, game_url, embed_color, channel, file) {
+    show_file(game_name, game_url, embed_color, file) {
         fs.readFile(file, "utf-8", (err, text) => {
-            if (!err) channel.send(new discord.RichEmbed().setTitle(game_name).setURL(game_url).setColor(embed_color).setDescription(text).setThumbnail(this.client.user.avatarURL));
+            if (!err) this.channel.send(new discord.RichEmbed().setTitle(game_name).setURL(game_url).setColor(embed_color).setDescription(text).setThumbnail(this.client.user.avatarURL));
         });
     }
 }

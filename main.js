@@ -9,18 +9,20 @@ function cmd(msg, text) {
 }
 
 client.on("message", (msg) => {
-    if (games[msg.channel.id] == undefined) games[msg.channel.id] = new WimbleDungeonsGame(client);
+    if (games[msg.channel.id] == undefined || games[msg.channel.id].over)
+        games[msg.channel.id] = new WimbleDungeonsGame(client, msg.channel);
     const game = games[msg.channel.id];
-    if (cmd(msg, "rules")) {
-        game.rules(msg.channel);
+    if (cmd(msg, "help")) {
+        game.help();
+    } else if (cmd(msg, "rules")) {
+        game.rules();
     } else if (cmd(msg, "start")) {
-        if (!game.started) game.add_player(msg.author, msg.channel);
+        if (!game.started) game.add_player(msg.author);
     } else if (cmd(msg, "end")) {
-        game.quit(msg.author, msg.channel);
+        game.quit(msg.author);
     } else if (game.started) {
         game.state(msg);
     }
-    if (game.over) games[msg.channel.id] = new WimbleDungeonsGame(client);
 });
 
 client.login(process.env.CLIENT_TOKEN);
