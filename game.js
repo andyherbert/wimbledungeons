@@ -11,7 +11,7 @@ function d20() {
 
 function end_timeout(game) {
     return () => {
-        game.user_embed(`Sorry ${game.player_one_name}, it looks like no-one wanted to join your game 🤷‍`, game.player_one);
+        game.user_embed({text: `Sorry ${game.player_one_name}, it looks like no-one wanted to join your game 🤷‍`, user: game.player_one});
         game.over = true;
     };
 }
@@ -26,7 +26,7 @@ class Game {
     }
 
     get player_one_name() {
-        return this.player_one.username;
+        return this.player_one.toString();
     }
 
     set player_two(user) {
@@ -38,7 +38,7 @@ class Game {
     }
 
     get player_two_name() {
-        return this.player_two.username;
+        return this.player_two.toString();
     }
 
     is_player_one(user) {
@@ -60,9 +60,13 @@ class Game {
         return this.players.length;
     }
 
-    constructor(client, channel) {
+    constructor({client, channel, game_name, embed_color, game_rules = "./txt/rules.md", game_help = "./txt/help.md"} = {}) {
         this.client = client;
         this.channel = channel;
+        this.game_name = game_name;
+        this.embed_color = embed_color;
+        this.game_rules = game_rules;
+        this.game_help = game_help;
         this.players = [];
         this.started = false;
         this.over = false;
@@ -70,21 +74,17 @@ class Game {
 
     start_timer(seconds) {
         this.timer = this.client.setTimeout(end_timeout(this), seconds * 1000);
-        this.user_embed(`${this.player_one_name} has created a new game! Another player has ${seconds} seconds to join! ⏱`, this.player_one);
+        this.user_embed({text: `${this.player_one_name} has created a new game! Another player has ${seconds} seconds to join! ⏱`, user: this.player_one});
     }
 
     add_player(player) {
         this.players[this.players.length] = player;
     }
 
-    start(game_name, game_url, embed_color, text) {
-        this.game_name = game_name;
-        this.game_url = game_url;
-        this.embed_color = embed_color;
-        clearTimeout(this.timer);
-        this.client.user.setPresence({game: {name: game_name}});
+    start() {
+        this.client.clearTimeout(this.timer);
+        this.client.user.setPresence({game: {name: this.game_name}});
         this.started = true;
-        this.embed(text);
     }
 
     end() {
@@ -96,32 +96,38 @@ class Game {
         if (this.is_a_player(user)) {
             if (!this.started) clearTimeout(this.timer);
             this.end();
-            this.user_embed(`${user.username} ended the game.`, user);
+            this.user_embed({text: `${user.toString()} ended the game.`, user});
         }
     }
 
-    embed(text) {
-        const embed = new discord.RichEmbed()
-            .setTitle(this.game_name)
-            .setURL(this.game_url)
-            .setColor(this.embed_color)
-            .setDescription(text)
-            .setThumbnail(this.client.user.avatarURL);
-        this.channel.send(embed);
+    create_embed({text = "", footer = ""} = {}) {
+        return new discord.RichEmbed().setColor(this.embed_color).setDescription(text).setFooter(footer);
     }
 
-    small_embed(text) {
-        this.channel.send(new discord.RichEmbed().setDescription(text));
+    small_embed({text, footer}) {
+        this.channel.send(this.create_embed({text, footer}));
     }
 
-    user_embed(text, user, footer = "") {
-        this.channel.send(new discord.RichEmbed().setDescription(text).setThumbnail(user.avatarURL).setFooter(footer));
+    user_embed({text, footer, user}) {
+        this.channel.send(this.create_embed({text, footer}).setThumbnail(user.avatarURL));
     }
 
-    show_file(game_name, game_url, embed_color, file) {
+    embed_with_avatar({text, footer}) {
+        this.user_embed({text, footer, user: this.client.user});
+    }
+
+    show_file(file) {
         fs.readFile(file, "utf-8", (err, text) => {
-            if (!err) this.channel.send(new discord.RichEmbed().setTitle(game_name).setURL(game_url).setColor(embed_color).setDescription(text).setThumbnail(this.client.user.avatarURL));
+            if (!err) this.embed_with_avatar({text});
         });
+    }
+
+    rules() {
+        this.show_file(this.game_rules);
+    }
+
+    help() {
+        this.show_file(this.game_help);
     }
 }
 

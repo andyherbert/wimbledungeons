@@ -9,8 +9,10 @@ function cmd(msg, text) {
 }
 
 client.on("message", (msg) => {
+    if (!msg.author.bot)
+        console.log(`[${msg.guild}/${msg.channel.name}/${msg.author.username}]: ${msg.cleanContent}`);
     if (games[msg.channel.id] == undefined || games[msg.channel.id].over)
-        games[msg.channel.id] = new WimbleDungeonsGame(client, msg.channel);
+        games[msg.channel.id] = new WimbleDungeonsGame({client, channel: msg.channel});
     const game = games[msg.channel.id];
     if (cmd(msg, "help")) {
         game.help();
