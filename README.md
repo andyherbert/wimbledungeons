@@ -15,3 +15,5 @@ Player 1 serves choosing a serve difficulty of 8. They roll a 16 and therefore s
 Etc.
 
 Any roll above 15, even if they miss the shot, gives the player a point of power. Power can be spent before rolling to return the shot to either reduce the threshold of your return by 5 (Calm in the Storm) or increase the threshold of opponents return by 5 (Press the Advantage). Reducing the threshold can be used even if the threshold has been raised by the use of power. Increasing the threshold is capped at 20. i.e. a natural 20 will still always return a shot. A maximum of two power points can be held in reserve during play.
+
+https://discordapp.com/oauth2/authorize?&client_id=585085237021900800&scope=bot&permissions=2048
